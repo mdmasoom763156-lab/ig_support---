@@ -12,13 +12,27 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- GOOGLE SHEETS SETUP ----------
-const creds = require('./credentials.json');
+// ---------- GOOGLE SHEETS SETUP (AUTO) ----------
+let creds;
+if (process.env.GOOGLE_PRIVATE_KEY) {
+    // Render (Live)
+    creds = {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+    };
+} else {
+    // Local (VS Code)
+    creds = require('./credentials.json');
+}
 
-const doc = new GoogleSpreadsheet('1wcpCc2jVWHE_sWA5LpFKUnF2UEBnsSrHGk7ZX3v01gE', new JWT({
-    email: creds.client_email,
-    key: creds.private_key,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-}));
+const doc = new GoogleSpreadsheet(
+    process.env.GOOGLE_SHEET_ID || '1wcpCc2jVWHE_sWA5LpFKUnF2UEBnsSrHGk7ZX3v01gE',
+    new JWT({
+        email: creds.client_email,
+        key: creds.private_key,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    })
+);
 
 // ---------- REGISTER API (Optional - Rakho Ya Hatao) ----------
 app.post('/api/register', async (req, res) => {
