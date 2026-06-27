@@ -18,7 +18,7 @@ if (process.env.GOOGLE_PRIVATE_KEY) {
     // Render (Live)
     creds = {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        private_key: process.env.GOOGLE_PRIVATE_KEY  // ✅ YEH CHANGE KARO
     };
 } else {
     // Local (VS Code)
@@ -33,7 +33,6 @@ const doc = new GoogleSpreadsheet(
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     })
 );
-
 // ---------- REGISTER API (Optional - Rakho Ya Hatao) ----------
 app.post('/api/register', async (req, res) => {
     try {
